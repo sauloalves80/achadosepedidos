@@ -2,6 +2,44 @@ let filtroAtual = '';
 let canvas, ctx, desenhando = false;
 let temAssinatura = false;
 
+function comprimirImagem(file, maxWidth = 1280, qualidade = 0.75) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let largura = img.width;
+                let altura = img.height;
+
+                if (largura > maxWidth) {
+                    altura = Math.round((altura * maxWidth) / largura);
+                    largura = maxWidth;
+                }
+
+                const canvasTemp = document.createElement('canvas');
+                canvasTemp.width = largura;
+                canvasTemp.height = altura;
+                const ctxTemp = canvasTemp.getContext('2d');
+                ctxTemp.drawImage(img, 0, 0, largura, altura);
+
+                canvasTemp.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Falha ao comprimir imagem'));
+                        return;
+                    }
+                    resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {
+                        type: 'image/jpeg'
+                    }));
+                }, 'image/jpeg', qualidade);
+            };
+            img.onerror = () => reject(new Error('Falha ao carregar imagem'));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+        reader.readAsDataURL(file);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     carregarItens();
 
@@ -198,19 +236,38 @@ async function salvarItem() {
 
     const fotoInput = document.getElementById('foto-input');
     if (fotoInput.files.length > 0) {
-        formData.append('foto', fotoInput.files[0]);
+        try {
+            const fotoComprimida = await comprimirImagem(fotoInput.files[0]);
+            formData.append('foto', fotoComprimida);
+        } catch (erroCompressao) {
+            console.error('Erro ao comprimir imagem:', erroCompressao);
+            formData.append('foto', fotoInput.files[0]);
+        }
     }
 
     try {
-        await fetch('/api/itens', {
+        const resposta = await fetch('/api/itens', {
             method: 'POST',
             body: formData
         });
+
+        if (!resposta.ok) {
+            let mensagemErro = 'Erro ao salvar item!';
+            try {
+                const dadosErro = await resposta.json();
+                if (dadosErro && dadosErro.erro) {
+                    mensagemErro = dadosErro.erro;
+                }
+            } catch (e) {}
+            alert(mensagemErro);
+            return;
+        }
+
         fecharModal();
         carregarItens();
     } catch (error) {
         console.error('Erro ao salvar:', error);
-        alert('Erro ao salvar item!');
+        alert('Erro ao conectar com o servidor!');
     }
 }
 
