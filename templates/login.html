@@ -26,6 +26,19 @@
             font-size: 0.9rem;
             text-align: center;
         }
+        .registro-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        .registro-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .registro-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -50,6 +63,10 @@
                 </div>
                 <button type="submit" class="btn-salvar">Entrar</button>
             </form>
+
+            <div class="registro-link">
+                Nao tem conta? <a href="{{ url_for('registrar') }}">Criar uma agora</a>
+            </div>
         </div>
     </div>
 </body>

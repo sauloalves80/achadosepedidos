@@ -61,6 +61,49 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/registrar', methods=['GET', 'POST'])
+def registrar():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        senha = request.form.get('senha', '')
+        confirmar_senha = request.form.get('confirmar_senha', '')
+
+        # Validações
+        if not username or not senha:
+            return render_template('registrar.html', erro='Usuario e senha sao obrigatorios')
+        
+        if senha != confirmar_senha:
+            return render_template('registrar.html', erro='Senhas nao conferem')
+        
+        if len(senha) < 4:
+            return render_template('registrar.html', erro='Senha deve ter pelo menos 4 caracteres')
+
+        from werkzeug.security import generate_password_hash
+        
+        db = get_db()
+        try:
+            cur = db.cursor()
+            # Verifica se usuário já existe
+            cur.execute(adapt_query('SELECT id FROM usuarios WHERE username = ?'), adapt_params([username]))
+            if cur.fetchone():
+                return render_template('registrar.html', erro='Usuario ja existe')
+            
+            # Cria o usuário
+            senha_hash = generate_password_hash(senha)
+            cur.execute(
+                adapt_query('INSERT INTO usuarios (username, senha_hash) VALUES (?, ?)'),
+                adapt_params([username, senha_hash])
+            )
+            db.commit()
+            return render_template('registrar.html', sucesso='Usuario criado com sucesso! Agora voce pode fazer login.')
+        except Exception as e:
+            db.rollback()
+            return render_template('registrar.html', erro=f'Erro ao criar usuario: {str(e)}')
+        finally:
+            db.close()
+
+    return render_template('registrar.html')
+
 @app.route('/')
 @login_required
 def index():
