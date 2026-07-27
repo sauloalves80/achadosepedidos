@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for
+from functools import wraps
+from werkzeug.security import check_password_hash
 from database import get_db, init_db, DATABASE_URL, adapt_query, adapt_params
 import os
 import uuid
@@ -12,6 +14,17 @@ cloudinary.config(
 )
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'chave-temporaria-troque-em-producao')
+
+def login_required(f):
+    @wraps(f)
+    def decorada(*args, **kwargs):
+        if not session.get('usuario_id'):
+            if request.path.startswith('/api/'):
+                return jsonify({'erro': 'Nao autenticado'}), 401
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorada
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -20,7 +33,36 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def setup():
     init_db()
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        senha = request.form.get('senha', '')
+
+        db = get_db()
+        try:
+            cur = db.cursor()
+            cur.execute(adapt_query('SELECT * FROM usuarios WHERE username = ?'), adapt_params([username]))
+            usuario = cur.fetchone()
+        finally:
+            db.close()
+
+        if usuario and check_password_hash(usuario['senha_hash'], senha):
+            session['usuario_id'] = usuario['id']
+            session['username'] = usuario['username']
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', erro='Usuario ou senha invalidos')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
@@ -29,6 +71,7 @@ def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 @app.route('/api/itens', methods=['GET'])
+@login_required
 def listar_itens():
     db = get_db()
     try:
@@ -55,6 +98,7 @@ def listar_itens():
         db.close()
 
 @app.route('/api/itens', methods=['POST'])
+@login_required
 def criar_item():
     db = get_db()
     try:
@@ -70,8 +114,11 @@ def criar_item():
         if 'foto' in request.files:
             foto = request.files['foto']
             if foto.filename:
-                result = cloudinary.uploader.upload(foto, folder='achados-perdidos')
-                foto_url = result['secure_url']
+                try:
+                    result = cloudinary.uploader.upload(foto, folder='achados-perdidos')
+                    foto_url = result['secure_url']
+                except Exception as erro_upload:
+                    return jsonify({'erro': f'Falha ao enviar a foto: {str(erro_upload)}'}), 400
 
         cur = db.cursor()
         sql = '''INSERT INTO itens (nome, descricao, local, data_registro, tipo, matricula, encontrado_por, foto)
@@ -83,6 +130,7 @@ def criar_item():
         db.close()
 
 @app.route('/api/itens/<int:id>/status', methods=['PUT'])
+@login_required
 def atualizar_status(id):
     db = get_db()
     try:
@@ -104,6 +152,7 @@ def atualizar_status(id):
         db.close()
 
 @app.route('/api/itens/<int:id>', methods=['DELETE'])
+@login_required
 def deletar_item(id):
     db = get_db()
     try:

@@ -48,6 +48,14 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                senha_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         conn.commit()
     else:
         import sqlite3
@@ -90,6 +98,15 @@ def init_db():
                 cur.execute('ALTER TABLE itens ADD COLUMN encontrado_por TEXT')
             if 'matricula_receptor' not in columns:
                 cur.execute('ALTER TABLE itens ADD COLUMN matricula_receptor TEXT')
+
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                senha_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
 
         conn.commit()
 
