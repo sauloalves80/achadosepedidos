@@ -330,3 +330,42 @@ header h1 {
     object-fit: cover;
     border-radius: 10px;
 }
+
+
+/* Estilos para Tela Cheia de Assinatura */
+.signature-pad:fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    width: 100vw;
+    height: 100vh;
+}
+
+.signature-pad:fullscreen canvas {
+    width: 90vw !important;
+    height: 90vh !important;
+    border: 3px solid #667eea;
+    border-radius: 10px;
+    background: white;
+    cursor: crosshair;
+}
+
+/* Para Safari e navegadores webkit */
+.signature-pad:-webkit-full-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    width: 100vw;
+    height: 100vh;
+}
+
+.signature-pad:-webkit-full-screen canvas {
+    width: 90vw !important;
+    height: 90vh !important;
+    border: 3px solid #667eea;
+    border-radius: 10px;
+    background: white;
+    cursor: crosshair;
+}

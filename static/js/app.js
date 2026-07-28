@@ -185,7 +185,6 @@ async function carregarItens(busca = '') {
                     '<div>' +
                         (item.status === 'pendente' ?
                             '<button class="btn-status btn-devolver" onclick="abrirModalDevolucao(' + item.id + ')">Devolvido</button>' : '') +
-                        '<button class="btn-status btn-deletar" onclick="deletarItem(' + item.id + ')">Excluir</button>' +
                     '</div>' +
                 '</div>' +
                 devolucaoHtml +
@@ -325,4 +324,49 @@ async function deletarItem(id) {
             console.error('Erro ao deletar:', error);
         }
     }
+}
+
+function toggleFullscreenSignature() {
+    const canvas = document.getElementById('canvas-assinatura');
+    const container = canvas.parentElement;
+    
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        // Entra em tela cheia
+        if (container.requestFullscreen) {
+            container.requestFullscreen().then(() => {
+                resizeCanvasForFullscreen();
+            });
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+            resizeCanvasForFullscreen();
+        }
+    } else {
+        // Sai de tela cheia
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+        // Redimensiona canvas de volta ao tamanho normal
+        setTimeout(() => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 150;
+            inicializarCanvas();
+        }, 100);
+    }
+}
+
+function resizeCanvasForFullscreen() {
+    const canvas = document.getElementById('canvas-assinatura');
+    canvas.width = window.innerWidth * 0.9;
+    canvas.height = window.innerHeight * 0.9;
+    inicializarCanvas();
+}
+
+function inicializarCanvas() {
+    const canvas = document.getElementById('canvas-assinatura');
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
 }
