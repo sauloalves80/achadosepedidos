@@ -127,18 +127,69 @@ function limparAssinatura() {
     temAssinatura = false;
 }
 
-function previewFoto(input) {
-    const preview = document.getElementById('foto-preview');
-    const placeholder = document.getElementById('foto-placeholder');
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-            placeholder.style.display = 'none';
-        };
-        reader.readAsDataURL(input.files[0]);
+const MAX_FOTOS = 3;
+let fotosSelecionadas = [null, null, null];
+let slotAtual = null;
+
+function selecionarFoto(index) {
+    slotAtual = index;
+    document.getElementById('foto-input').click();
+}
+
+function fotoSelecionada(input) {
+    if (slotAtual === null || !input.files || !input.files[0]) return;
+    fotosSelecionadas[slotAtual] = input.files[0];
+    renderizarSlotsFoto();
+    input.value = '';
+    slotAtual = null;
+}
+
+function removerFoto(index) {
+    fotosSelecionadas[index] = null;
+    renderizarSlotsFoto();
+}
+
+function renderizarSlotsFoto() {
+    for (let i = 0; i < MAX_FOTOS; i++) {
+        const slot = document.querySelector('.foto-slot[data-index="' + i + '"]');
+        const arquivo = fotosSelecionadas[i];
+        if (arquivo) {
+            const url = URL.createObjectURL(arquivo);
+            slot.classList.add('preenchido');
+            slot.innerHTML = '<img src="' + url + '" alt="Foto ' + (i + 1) + '">' +
+                '<button type="button" class="remover-foto" onclick="event.stopPropagation(); removerFoto(' + i + ')">&times;</button>';
+        } else {
+            slot.classList.remove('preenchido');
+            slot.innerHTML = '<span class="foto-slot-placeholder">+</span>';
+        }
     }
+}
+
+function limparFotosForm() {
+    fotosSelecionadas = [null, null, null];
+    slotAtual = null;
+    renderizarSlotsFoto();
+}
+
+function extrairFotos(campoFoto) {
+    if (!campoFoto) return [];
+    try {
+        const parsed = JSON.parse(campoFoto);
+        if (Array.isArray(parsed)) return parsed;
+        return [String(parsed)];
+    } catch (e) {
+        return [campoFoto];
+    }
+}
+
+function abrirLightbox(url) {
+    document.getElementById('lightbox-img').src = url;
+    document.getElementById('lightbox').classList.add('ativo');
+}
+
+function fecharLightbox() {
+    document.getElementById('lightbox').classList.remove('ativo');
+    document.getElementById('lightbox-img').src = '';
 }
 
 async function carregarItens(busca = '') {
@@ -163,8 +214,11 @@ async function carregarItens(busca = '') {
             }
 
             let fotoHtml = '';
-            if (item.foto) {
-                fotoHtml = '<div class="item-foto"><img src="' + item.foto + '" alt="Foto do item"></div>';
+            const fotosItem = extrairFotos(item.foto);
+            if (fotosItem.length > 0) {
+                fotoHtml = '<div class="item-fotos">' +
+                    fotosItem.map(url => '<img src="' + url + '" alt="Foto do item" onclick="abrirLightbox(\'' + url + '\')">').join('') +
+                    '</div>';
             }
 
             return '<div class="item-card ' + item.tipo + '">' +
@@ -203,8 +257,7 @@ function abrirModal() {
 function fecharModal() {
     document.getElementById('modal').classList.remove('ativo');
     document.getElementById('form-item').reset();
-    document.getElementById('foto-preview').style.display = 'none';
-    document.getElementById('foto-placeholder').style.display = 'block';
+    limparFotosForm();
 }
 
 function abrirModalDevolucao(id) {
@@ -233,14 +286,14 @@ async function salvarItem() {
     formData.append('matricula', document.getElementById('matricula').value);
     formData.append('encontrado_por', document.getElementById('encontrado_por').value);
 
-    const fotoInput = document.getElementById('foto-input');
-    if (fotoInput.files.length > 0) {
+    for (const arquivo of fotosSelecionadas) {
+        if (!arquivo) continue;
         try {
-            const fotoComprimida = await comprimirImagem(fotoInput.files[0]);
-            formData.append('foto', fotoComprimida);
+            const fotoComprimida = await comprimirImagem(arquivo);
+            formData.append('fotos', fotoComprimida);
         } catch (erroCompressao) {
             console.error('Erro ao comprimir imagem:', erroCompressao);
-            formData.append('foto', fotoInput.files[0]);
+            formData.append('fotos', arquivo);
         }
     }
 

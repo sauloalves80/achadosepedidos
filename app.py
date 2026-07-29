@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash
 from database import get_db, init_db, DATABASE_URL, adapt_query, adapt_params
 import os
 import uuid
+import json
 import cloudinary
 import cloudinary.uploader
 
@@ -153,15 +154,17 @@ def criar_item():
         matricula = request.form.get('matricula', '')
         encontrado_por = request.form.get('encontrado_por', '')
 
-        foto_url = None
-        if 'foto' in request.files:
-            foto = request.files['foto']
-            if foto.filename:
+        fotos_urls = []
+        arquivos_foto = request.files.getlist('fotos')
+        for foto in arquivos_foto[:3]:
+            if foto and foto.filename:
                 try:
                     result = cloudinary.uploader.upload(foto, folder='achados-perdidos')
-                    foto_url = result['secure_url']
+                    fotos_urls.append(result['secure_url'])
                 except Exception as erro_upload:
                     return jsonify({'erro': f'Falha ao enviar a foto: {str(erro_upload)}'}), 400
+
+        foto_url = json.dumps(fotos_urls) if fotos_urls else None
 
         cur = db.cursor()
         sql = '''INSERT INTO itens (nome, descricao, local, data_registro, tipo, matricula, encontrado_por, foto)
@@ -204,10 +207,17 @@ def deletar_item(id):
         item = cur.fetchone()
         if item and item['foto']:
             try:
-                public_id = item['foto'].split('/')[-1].split('.')[0]
-                cloudinary.uploader.destroy(f'achados-perdidos/{public_id}')
-            except:
-                pass
+                urls = json.loads(item['foto'])
+                if not isinstance(urls, list):
+                    urls = [item['foto']]
+            except (ValueError, TypeError):
+                urls = [item['foto']]
+            for url in urls:
+                try:
+                    public_id = url.split('/')[-1].split('.')[0]
+                    cloudinary.uploader.destroy(f'achados-perdidos/{public_id}')
+                except:
+                    pass
         cur.execute(adapt_query('DELETE FROM itens WHERE id = ?'), adapt_params([id]))
         db.commit()
         return jsonify({'mensagem': 'Item removido!'})

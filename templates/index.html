@@ -66,12 +66,19 @@
                     <input type="text" id="encontrado_por">
                 </div>
                 <div class="form-group">
-                    <label>Foto</label>
-                    <div class="foto-upload" onclick="document.getElementById('foto-input').click()">
-                        <img id="foto-preview" class="foto-preview" style="display:none">
-                        <span id="foto-placeholder" class="foto-placeholder">Clique para adicionar foto</span>
+                    <label>Fotos (ate 3)</label>
+                    <div class="fotos-upload-grid" id="fotos-upload-grid">
+                        <div class="foto-slot" data-index="0" onclick="selecionarFoto(0)">
+                            <span class="foto-slot-placeholder">+</span>
+                        </div>
+                        <div class="foto-slot" data-index="1" onclick="selecionarFoto(1)">
+                            <span class="foto-slot-placeholder">+</span>
+                        </div>
+                        <div class="foto-slot" data-index="2" onclick="selecionarFoto(2)">
+                            <span class="foto-slot-placeholder">+</span>
+                        </div>
                     </div>
-                    <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
+                    <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="fotoSelecionada(this)">
                 </div>
                 <button type="submit" class="btn-salvar">Salvar</button>
             </form>
@@ -109,6 +116,10 @@
                 <button type="button" class="btn-salvar" onclick="confirmarDevolucao()">Confirmar Devolucao</button>
             </form>
         </div>
+    </div>
+
+    <div id="lightbox" class="lightbox" onclick="fecharLightbox()">
+        <img id="lightbox-img" src="" alt="Foto ampliada">
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
