@@ -1,4 +1,5 @@
-let filtroAtual = '';
+let filtroTipoAtual = '';
+let filtroStatusAtual = '';
 let canvas, ctx, desenhando = false;
 let temAssinatura = false;
 
@@ -47,8 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
             btn.classList.add('ativo');
-            filtroAtual = btn.dataset.tipo;
-            carregarItens();
+            filtroTipoAtual = btn.dataset.tipo || '';
+            filtroStatusAtual = btn.dataset.status || '';
+            carregarItens(document.getElementById('busca').value);
         });
     });
 
@@ -194,7 +196,8 @@ function fecharLightbox() {
 
 async function carregarItens(busca = '') {
     let url = '/api/itens?';
-    if (filtroAtual) url += 'tipo=' + filtroAtual + '&';
+    if (filtroTipoAtual) url += 'tipo=' + filtroTipoAtual + '&';
+    if (filtroStatusAtual) url += 'status=' + filtroStatusAtual + '&';
     if (busca) url += 'busca=' + busca;
 
     try {
@@ -239,6 +242,7 @@ async function carregarItens(busca = '') {
                     '<div>' +
                         (item.status === 'pendente' ?
                             '<button class="btn-status btn-devolver" onclick="abrirModalDevolucao(' + item.id + ')">Devolvido</button>' : '') +
+                        '<button class="btn-status btn-deletar" onclick="deletarItem(' + item.id + ')">Excluir</button>' +
                     '</div>' +
                 '</div>' +
                 devolucaoHtml +
@@ -382,9 +386,8 @@ async function deletarItem(id) {
 function toggleFullscreenSignature() {
     const canvas = document.getElementById('canvas-assinatura');
     const container = canvas.parentElement;
-    
+
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        // Entra em tela cheia
         if (container.requestFullscreen) {
             container.requestFullscreen().then(() => {
                 resizeCanvasForFullscreen();
@@ -394,13 +397,11 @@ function toggleFullscreenSignature() {
             resizeCanvasForFullscreen();
         }
     } else {
-        // Sai de tela cheia
         if (document.exitFullscreen) {
             document.exitFullscreen();
         } else if (document.webkitExitFullscreen) {
             document.webkitExitFullscreen();
         }
-        // Redimensiona canvas de volta ao tamanho normal
         setTimeout(() => {
             canvas.width = canvas.offsetWidth;
             canvas.height = 150;
