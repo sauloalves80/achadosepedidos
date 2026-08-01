@@ -120,6 +120,7 @@ def listar_itens():
     db = get_db()
     try:
         tipo = request.args.get('tipo')
+        status = request.args.get('status')
         busca = request.args.get('busca', '')
 
         query = 'SELECT * FROM itens WHERE 1=1'
@@ -128,6 +129,10 @@ def listar_itens():
         if tipo:
             query += ' AND tipo = ?'
             params.append(tipo)
+
+        if status:
+            query += ' AND status = ?'
+            params.append(status)
 
         if busca:
             query += ' AND (nome LIKE ? OR descricao LIKE ? OR local LIKE ?)'
