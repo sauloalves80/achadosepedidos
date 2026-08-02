@@ -23,6 +23,34 @@ body {
     padding: 20px;
 }
 
+@media (min-width: 700px) {
+    .container {
+        max-width: 1100px;
+    }
+}
+
+header {
+    text-align: center;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+.link-sair {
+    display: inline-block;
+    margin-top: 8px;
+    color: white;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    opacity: 0.9;
+}
 
 .conteudo {
     max-width: 1100px;
