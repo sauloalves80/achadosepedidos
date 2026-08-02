@@ -110,6 +110,41 @@ def registrar():
 def index():
     return render_template('index.html')
 
+@app.route('/visualizar')
+def visualizar():
+    return render_template('visualizar.html')
+
+@app.route('/api/publico/itens', methods=['GET'])
+def listar_itens_publico():
+    db = get_db()
+    try:
+        tipo = request.args.get('tipo')
+        status = request.args.get('status')
+        busca = request.args.get('busca', '')
+
+        query = 'SELECT id, nome, descricao, local, data_registro, tipo, status, foto, data_devolucao FROM itens WHERE 1=1'
+        params = []
+
+        if tipo:
+            query += ' AND tipo = ?'
+            params.append(tipo)
+
+        if status:
+            query += ' AND status = ?'
+            params.append(status)
+
+        if busca:
+            query += ' AND (nome LIKE ? OR descricao LIKE ? OR local LIKE ?)'
+            params.extend([f'%{busca}%'] * 3)
+
+        query += ' ORDER BY created_at DESC'
+        cur = db.cursor()
+        cur.execute(adapt_query(query), adapt_params(params))
+        itens = cur.fetchall()
+        return jsonify([dict(row) for row in itens])
+    finally:
+        db.close()
+
 @app.route('/static/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)

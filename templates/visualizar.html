@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achados e Perdidos - Consulta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Achados e Perdidos</h1>
+        <p>Consulte se o seu item foi encontrado</p>
+    </header>
+
+    <div class="conteudo">
+        <nav class="filtros">
+            <button class="filtro-btn ativo" data-tipo="" data-status="">Todos</button>
+            <button class="filtro-btn" data-tipo="achado" data-status="">Achados</button>
+            <button class="filtro-btn" data-tipo="pedido" data-status="">Pedidos</button>
+            <button class="filtro-btn" data-tipo="" data-status="devolvido">Devolvidos</button>
+        </nav>
+
+        <div class="busca">
+            <input type="text" id="busca" placeholder="Buscar item...">
+        </div>
+
+        <div id="lista-itens" class="lista-itens"></div>
+    </div>
+
+    <div id="lightbox" class="lightbox" onclick="fecharLightbox()">
+        <img id="lightbox-img" src="" alt="Foto ampliada">
+    </div>
+
+    <script src="{{ url_for('static', filename='js/visualizar.js') }}"></script>
+</body>
+</html>
